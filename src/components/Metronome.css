@@ -1,0 +1,265 @@
+.metronome-container {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(10px);
+  padding: 1.5rem;
+  z-index: 1000;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.metronome-display {
+  max-width: 600px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.metronome-controls-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  justify-content: center;
+}
+
+.play-pause-button {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: rgba(37, 99, 235, 0.9);
+  color: white;
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
+}
+
+.play-pause-button:hover {
+  background: rgba(37, 99, 235, 1);
+  transform: scale(1.1);
+}
+
+.sound-selector {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.sound-button {
+  width: 45px;
+  height: 45px;
+  border-radius: 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.sound-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
+}
+
+.sound-button.active {
+  background: rgba(37, 99, 235, 0.9);
+  border-color: rgba(255, 255, 255, 0.5);
+  box-shadow: 0 0 10px rgba(37, 99, 235, 0.5);
+}
+
+.metronome-label {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.metronome-bpm {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.bpm-button {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  font-size: 2rem;
+  font-weight: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.bpm-button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
+}
+
+.bpm-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.bpm-button {
+  transition: all 0.2s;
+}
+
+.bpm-button:hover:not(:disabled) {
+  transform: scale(1.1);
+}
+
+.bpm-value {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 120px;
+}
+
+.bpm-number {
+  font-size: 3rem;
+  font-weight: 700;
+  color: white;
+  line-height: 1;
+}
+
+.bpm-unit {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin-top: 0.25rem;
+}
+
+.bpm-slider {
+  width: 100%;
+  max-width: 400px;
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  outline: none;
+  -webkit-appearance: none;
+}
+
+.bpm-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--primary-color);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.bpm-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+.bpm-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--primary-color);
+  cursor: pointer;
+  border: none;
+}
+
+.bpm-slider:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .metronome-controls-row {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .play-pause-button {
+    width: 55px;
+    height: 55px;
+    font-size: 1.25rem;
+  }
+
+  .sound-button {
+    width: 40px;
+    height: 40px;
+    font-size: 1.1rem;
+  }
+}
+
+.metronome-visualizer {
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.metronome-beat {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transition: all 0.1s;
+}
+
+.metronome-beat.active {
+  background: var(--primary-color);
+  transform: scale(1.5);
+  box-shadow: 0 0 20px var(--primary-color);
+}
+
+@media (max-width: 768px) {
+  .metronome-container {
+    padding: 1rem;
+  }
+
+  .bpm-number {
+    font-size: 2.5rem;
+  }
+
+  .bpm-button {
+    width: 45px;
+    height: 45px;
+    font-size: 1.5rem;
+  }
+
+  .metronome-bpm {
+    gap: 1rem;
+  }
+}
+
+@media (orientation: landscape) {
+  .metronome-container {
+    padding: 1rem 2rem;
+  }
+
+  .metronome-display {
+    flex-direction: row;
+    justify-content: center;
+    gap: 2rem;
+  }
+
+  .metronome-label {
+    position: absolute;
+    top: 0.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+}
+
