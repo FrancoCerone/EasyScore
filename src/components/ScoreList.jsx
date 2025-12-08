@@ -27,6 +27,11 @@ const ScoreList = () => {
   const { scores, updateScore, reorderScores, setIsPerformanceMode, setCurrentScoreIndex, setScores } = useStore()
   const [editingBPM, setEditingBPM] = useState(null)
   const fileInputRef = useRef(null)
+  
+  // Wrapper per setScores che gestisce async
+  const handleSetScores = async (newScores) => {
+    await setScores(newScores)
+  }
 
   const handleDragEnd = (result) => {
     if (!result.destination) return
@@ -94,8 +99,8 @@ const ScoreList = () => {
           return {
             id: importedScore.id || `${Date.now()}-${index}`,
             name: importedScore.name,
-            url: importedScore.base64, // Usa base64 come url
-            base64: importedScore.base64,
+            url: importedScore.base64, // Usa base64 come url temporaneo
+            base64: importedScore.base64, // Le immagini verranno salvate in IndexedDB da setScores
             bpm: importedScore.bpm || 120,
             zoom: importedScore.zoom || 100,
             order: importedScore.order !== undefined ? importedScore.order : index
@@ -113,7 +118,8 @@ const ScoreList = () => {
         )
 
         if (confirmImport) {
-          setScores(importedScores)
+          // setScores salverà automaticamente le immagini in IndexedDB
+          await handleSetScores(importedScores)
         }
       } else {
         // Formato vecchio: richiede spartiti già caricati (retrocompatibilità)
@@ -188,7 +194,7 @@ const ScoreList = () => {
         const confirmImport = window.confirm(message + '\n\nVuoi applicare le modifiche?')
         
         if (confirmImport) {
-          setScores(orderedScores)
+          await handleSetScores(orderedScores)
         }
       }
 
