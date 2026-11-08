@@ -84,3 +84,28 @@
   }
 }
 
+
+.folder-label-secondary {
+  margin-left: 0.75rem;
+  background-color: transparent;
+  color: var(--primary-color);
+  border: 2px solid var(--primary-color);
+  box-shadow: none;
+}
+
+.folder-label-secondary:hover {
+  color: white;
+}
+
+.folder-hint {
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+@media (max-width: 480px) {
+  .folder-label-secondary {
+    margin-left: 0;
+    margin-top: 0.75rem;
+  }
+}

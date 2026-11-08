@@ -1,3 +1,5 @@
+import { createTabSalaScore, isEasyScoreFileName, isTabSalaDocument } from './easyscoreFormat'
+
 const fileToBase64 = (file) => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
@@ -7,29 +9,67 @@ const fileToBase64 = (file) => {
   })
 }
 
-export const loadImagesFromFiles = async (files) => {
-  const imageFiles = Array.from(files).filter(file => {
-    const extension = file.name.toLowerCase().split('.').pop()
-    return ['jpg', 'jpeg', 'png', 'webp'].includes(extension)
-  })
+const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp']
 
-  const scores = await Promise.all(
-    imageFiles.map(async (file, index) => {
-      const url = URL.createObjectURL(file)
-      const base64 = await fileToBase64(file)
-      return {
-        id: `${Date.now()}-${index}`,
-        name: file.name,
-        url: url,
-        base64: base64, // Salva anche in base64 per persistenza
-        bpm: 120,
-        zoom: 100, // Zoom iniziale al 100%
-        order: index
+const getExtension = (name) => name.toLowerCase().split('.').pop()
+
+const readFileAsText = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result)
+    reader.onerror = reject
+    reader.readAsText(file)
+  })
+}
+
+const createImageScore = async (file, id) => ({
+  id,
+  name: file.name,
+  url: URL.createObjectURL(file),
+  base64: await fileToBase64(file), // Salva anche in base64 per persistenza
+  bpm: 120,
+  zoom: 100 // Zoom iniziale al 100%
+})
+
+/**
+ * Carica immagini e file EasyScore (.easyscore.json, kind "tab-sala").
+ * Ogni file diventa uno spartito della scaletta.
+ * Restituisce gli spartiti validi e l'elenco dei file scartati con il motivo.
+ */
+export const loadScoresFromFiles = async (files) => {
+  const stamp = Date.now()
+  const rejected = []
+
+  const results = await Promise.all(
+    Array.from(files).map(async (file, index) => {
+      const id = `${stamp}-${index}`
+      const extension = getExtension(file.name)
+
+      if (IMAGE_EXTENSIONS.includes(extension)) {
+        return createImageScore(file, id)
       }
+
+      if (isEasyScoreFileName(file.name)) {
+        try {
+          const data = JSON.parse(await readFileAsText(file))
+          // Le configurazioni esportate da questa app non sono spartiti: le ignoriamo
+          if (!isTabSalaDocument(data)) return null
+          return createTabSalaScore(data, file.name, id)
+        } catch (error) {
+          const reason = error instanceof SyntaxError ? 'JSON non valido' : error.message
+          rejected.push(`${file.name}: ${reason}`)
+        }
+      }
+      return null
     })
   )
 
-  return scores.sort((a, b) => a.name.localeCompare(b.name))
+  const scores = results
+    .filter(Boolean)
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map((score, order) => ({ ...score, order }))
+
+  return { scores, rejected }
 }
 
 export const exportToJSON = (scores) => {
@@ -54,6 +94,7 @@ export const exportToJSON = (scores) => {
         bpm: score.bpm,
         zoom: score.zoom || 100,
         base64: score.base64, // Include l'immagine in base64
+        ...(score.pages ? { kind: score.kind, pages: score.pages, precount: score.precount || 0 } : {}),
         order: index
       }))
   }

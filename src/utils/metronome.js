@@ -66,29 +66,37 @@ class Metronome {
     source.start(0)
   }
 
-  start(bpm, onTick) {
-    if (this.isPlaying) {
-      this.stop()
-    }
-
-    this.bpm = bpm
-    this.onTick = onTick
-    this.isPlaying = true
-
-    const interval = (60 / bpm) * 1000 // ms tra i click
-
-    this.intervalId = setInterval(() => {
-      this.playClick()
-      if (this.onTick) {
-        this.onTick()
-      }
-    }, interval)
-
-    // Primo click immediato
+  tick() {
     this.playClick()
     if (this.onTick) {
       this.onTick()
     }
+  }
+
+  schedule() {
+    if (this.intervalId) {
+      clearInterval(this.intervalId)
+    }
+    const interval = (60 / this.bpm) * 1000 // ms tra i click
+    this.intervalId = setInterval(() => this.tick(), interval)
+  }
+
+  start(bpm, onTick) {
+    this.onTick = onTick
+
+    // Già in esecuzione: aggiorna solo il tempo, senza click extra
+    // (altrimenti il conteggio dei beat salterebbe in avanti)
+    if (this.isPlaying) {
+      this.setBPM(bpm)
+      return
+    }
+
+    this.bpm = bpm
+    this.isPlaying = true
+    this.schedule()
+
+    // Primo click immediato
+    this.tick()
   }
 
   stop() {
@@ -100,12 +108,10 @@ class Metronome {
   }
 
   setBPM(bpm) {
-    const wasPlaying = this.isPlaying
-    if (wasPlaying) {
-      this.stop()
-      this.start(bpm, this.onTick)
-    } else {
-      this.bpm = bpm
+    if (bpm === this.bpm) return
+    this.bpm = bpm
+    if (this.isPlaying) {
+      this.schedule()
     }
   }
 

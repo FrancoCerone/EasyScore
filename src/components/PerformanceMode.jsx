@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import useStore from '../store/useStore'
+import { buildBeatMap, firstBeatOfLine, locateBeat } from '../utils/easyscoreFormat'
 import Metronome from './Metronome'
 import './PerformanceMode.css'
 
@@ -24,6 +25,89 @@ const PerformanceMode = () => {
   const [touchStartDistance, setTouchStartDistance] = useState(null)
   const [touchStartZoom, setTouchStartZoom] = useState(null)
   const scoreViewerRef = React.useRef(null)
+
+  // Spartiti EasyScore: evidenziazione del rigo a ogni click del metronomo
+  const isTabSala = Array.isArray(currentScore?.pages)
+  const beatMap = useMemo(
+    () => (isTabSala ? buildBeatMap(currentScore.pages) : null),
+    [isTabSala, currentScore?.pages]
+  )
+  const [beat, setBeat] = useState(0) // beat globale corrente, 0 = nessuno
+  const active = locateBeat(beatMap, beat)
+  const tabSalaRef = useRef(null)
+  const pageRefs = useRef([])
+
+  // Precount: dopo Play si contano N click prima che l'evidenziazione avanzi.
+  // Si usano ref perché il metronomo (componente figlio) può suonare il primo click
+  // prima che gli effetti di questo componente vengano eseguiti.
+  const precountLeftRef = useRef(isTabSala ? currentScore.precount || 0 : 0)
+  const precountStepRef = useRef(0)
+  const holdBeatRef = useRef(false) // il primo beat dopo il conteggio resta quello toccato
+  const [countIn, setCountIn] = useState(null) // numero del conteggio mostrato a schermo
+
+  const startCountIn = (precount) => {
+    precountLeftRef.current = precount || 0
+    precountStepRef.current = 0
+    setCountIn(null)
+  }
+
+  const handleBeat = useCallback(() => {
+    if (precountLeftRef.current > 0) {
+      precountLeftRef.current -= 1
+      precountStepRef.current += 1
+      setCountIn(precountStepRef.current)
+      return
+    }
+    setCountIn(null)
+    if (holdBeatRef.current) {
+      holdBeatRef.current = false
+      return
+    }
+    setBeat(prev => prev + 1)
+  }, [])
+
+  // Nuovo spartito: si riparte dal primo beat, con il suo precount.
+  // Al primo mount non si azzera: il metronomo (figlio) ha già suonato il primo click.
+  const lastScoreIdRef = useRef(currentScore?.id)
+  useEffect(() => {
+    if (lastScoreIdRef.current === currentScore?.id) return
+    lastScoreIdRef.current = currentScore?.id
+    setBeat(0)
+    holdBeatRef.current = false
+    startCountIn(isTabSala ? currentScore.precount : 0)
+    if (scoreViewerRef.current) scoreViewerRef.current.scrollTop = 0
+  }, [currentScore?.id])
+
+  // Tiene visibile il rigo attivo (calcolo sul layout, funziona anche in modalità portrait ruotata)
+  useEffect(() => {
+    if (!active) return
+    const viewer = scoreViewerRef.current
+    const page = pageRefs.current[active.pageIndex]
+    const container = tabSalaRef.current
+    if (!viewer || !page || !container) return
+
+    const style = window.getComputedStyle(viewer)
+    const padTop = parseFloat(style.paddingTop) || 0
+    const padBottom = parseFloat(style.paddingBottom) || 0
+    const visibleHeight = viewer.clientHeight - padTop - padBottom
+    const lineTop = container.offsetTop + page.offsetTop + active.line.y * page.offsetHeight
+    const topInView = lineTop - (viewer.scrollTop + padTop)
+
+    if (topInView < 8 || topInView > visibleHeight * 0.55) {
+      viewer.scrollTo({ top: lineTop - padTop - 16, behavior: 'smooth' })
+    }
+  }, [active?.pageIndex, active?.lineIndex])
+
+  // Toccando un rigo ci si posiziona sul beat toccato
+  const handleLineClick = (e, pageIndex, lineIndex, line) => {
+    const firstBeat = firstBeatOfLine(beatMap, pageIndex, lineIndex)
+    if (firstBeat === null) return
+    const width = e.currentTarget.offsetWidth || 1
+    const index = Math.min(line.beats - 1, Math.max(0, Math.floor((e.nativeEvent.offsetX / width) * line.beats)))
+    setBeat(firstBeat + index)
+    // Da fermo: al prossimo Play (dopo il precount) si parte proprio da questo beat
+    holdBeatRef.current = !isPlaying
+  }
 
   useEffect(() => {
     if (currentScore) {
@@ -59,7 +143,7 @@ const PerformanceMode = () => {
 
   // Gestione drag dell'immagine quando è zoomata (mouse)
   const handleMouseDown = (e) => {
-    if (currentZoom > 100 && e.button === 0) {
+    if (!isTabSala && currentZoom > 100 && e.button === 0) {
       setIsDragging(true)
       setDragStart({
         x: e.clientX - imagePosition.x,
@@ -83,7 +167,7 @@ const PerformanceMode = () => {
 
   // Gestione touch per pan e pinch-to-zoom
   const handleTouchStart = (e) => {
-    if (e.touches.length === 1 && currentZoom > 100) {
+    if (e.touches.length === 1 && !isTabSala && currentZoom > 100) {
       // Pan con un dito
       setIsDragging(true)
       setDragStart({
@@ -162,6 +246,11 @@ const PerformanceMode = () => {
   }
 
   const handleZoomFit = () => {
+    // Spartiti EasyScore: le pagine occupano già tutta la larghezza
+    if (isTabSala) {
+      handleZoomChange(100)
+      return
+    }
     // Calcola lo zoom per fittare l'immagine
     if (currentScore) {
       const img = new Image()
@@ -207,6 +296,8 @@ const PerformanceMode = () => {
   }
 
   const handlePlayPause = () => {
+    // Prima che il metronomo riparta, così il primo click è già un click di conteggio
+    startCountIn(!isPlaying && isTabSala ? currentScore.precount : 0)
     setIsPlaying(!isPlaying)
   }
 
@@ -281,14 +372,71 @@ const PerformanceMode = () => {
       </div>
 
       <div 
-        className="score-viewer"
+        className={`score-viewer ${isTabSala ? 'tab-sala-viewer' : ''}`}
         ref={scoreViewerRef}
         onMouseDown={handleMouseDown}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        style={{ cursor: currentZoom > 100 ? (isDragging ? 'grabbing' : 'grab') : 'default' }}
+        style={{ cursor: !isTabSala && currentZoom > 100 ? (isDragging ? 'grabbing' : 'grab') : 'default' }}
       >
+        {countIn !== null && (
+          <div className="count-in" key={countIn} aria-live="assertive">
+            {countIn}
+          </div>
+        )}
+        {isTabSala ? (
+          <div className="tab-sala" ref={tabSalaRef} style={{ width: `${currentZoom}%` }}>
+            {currentScore.pages.map((page, pageIndex) => (
+              <div
+                className="tab-page"
+                key={pageIndex}
+                ref={el => { pageRefs.current[pageIndex] = el }}
+              >
+                <img
+                  src={page.url}
+                  alt={page.name}
+                  className="tab-page-image"
+                  draggable={false}
+                />
+                {page.lines.map((line, lineIndex) => (
+                  <div
+                    key={lineIndex}
+                    className={`tab-line ${active && active.pageIndex === pageIndex && active.lineIndex === lineIndex ? 'active' : ''}`}
+                    style={{
+                      left: `${line.x * 100}%`,
+                      top: `${line.y * 100}%`,
+                      width: `${line.w * 100}%`,
+                      height: `${line.h * 100}%`
+                    }}
+                    onClick={(e) => handleLineClick(e, pageIndex, lineIndex, line)}
+                  />
+                ))}
+                {active && active.pageIndex === pageIndex && (
+                  <>
+                    <div
+                      className="tab-band"
+                      style={{
+                        left: `${active.band.x * 100}%`,
+                        top: `${active.band.y * 100}%`,
+                        width: `${active.band.w * 100}%`,
+                        height: `${active.band.h * 100}%`
+                      }}
+                    />
+                    <div
+                      className="tab-cursor"
+                      style={{
+                        left: `${active.cursor.x * 100}%`,
+                        top: `${active.cursor.y * 100}%`,
+                        height: `${active.cursor.h * 100}%`
+                      }}
+                    />
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
         <img
           src={currentScore.base64 || currentScore.url}
           alt={currentScore.name}
@@ -300,6 +448,7 @@ const PerformanceMode = () => {
           }}
           draggable={false}
         />
+        )}
       </div>
 
       <div className="zoom-controls">
@@ -355,6 +504,7 @@ const PerformanceMode = () => {
         isPlaying={isPlaying}
         onBPMChange={handleBPMChange}
         onPlayPause={handlePlayPause}
+        onBeat={isTabSala ? handleBeat : undefined}
       />
     </div>
   )

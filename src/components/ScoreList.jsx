@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd'
 import useStore from '../store/useStore'
 import { exportToJSON, importFromJSON } from '../utils/fileUtils'
+import { TAB_SALA_KIND, createTabSalaScore, isTabSalaDocument, readTabSalaPrecount } from '../utils/easyscoreFormat'
 import './ScoreList.css'
 
 // StrictModeDroppable wrapper per React 18
@@ -79,7 +80,18 @@ const ScoreList = () => {
 
     try {
       const importData = await importFromJSON(file)
-      
+
+      // Spartito EasyScore singolo: si aggiunge alla scaletta come un'immagine
+      if (isTabSalaDocument(importData)) {
+        const newScore = {
+          ...createTabSalaScore(importData, file.name, `${Date.now()}-0`),
+          order: scores.length
+        }
+        await handleSetScores([...scores, newScore])
+        fileInputRef.current.value = ''
+        return
+      }
+
       if (!importData.scores || !Array.isArray(importData.scores)) {
         alert('File JSON non valido: formato non riconosciuto')
         return
@@ -103,6 +115,13 @@ const ScoreList = () => {
             base64: importedScore.base64, // Le immagini verranno salvate in IndexedDB da setScores
             bpm: importedScore.bpm || 120,
             zoom: importedScore.zoom || 100,
+            ...(Array.isArray(importedScore.pages)
+              ? {
+                  kind: importedScore.kind || TAB_SALA_KIND,
+                  pages: importedScore.pages,
+                  precount: readTabSalaPrecount(importedScore)
+                }
+              : {}),
             order: importedScore.order !== undefined ? importedScore.order : index
           }
         })
@@ -225,6 +244,7 @@ const ScoreList = () => {
         ref={fileInputRef}
         type="file"
         accept="application/json,.json"
+        title="Scaletta esportata o spartito EasyScore (.easyscore.json)"
         onChange={handleFileSelect}
         style={{ display: 'none' }}
       />
@@ -272,7 +292,15 @@ const ScoreList = () => {
                         </div>
                         <div className="score-info">
                           <div className="score-name">{score.name}</div>
-                          <div className="score-order">#{index + 1}</div>
+                          <div className="score-order">
+                            #{index + 1}
+                            {score.pages && (
+                              <span className="score-kind">
+                                {' '}· EasyScore · {score.pages.length} pag. · {score.pages.reduce((n, p) => n + p.lines.length, 0)} righi
+                                {score.precount > 0 && ` · precount ${score.precount}`}
+                              </span>
+                            )}
+                          </div>
                         </div>
                         <div className="score-bpm">
                           {editingBPM === score.id ? (

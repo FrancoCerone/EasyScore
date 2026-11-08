@@ -42,10 +42,11 @@ const useStore = create(
       },
 
       updateScore: async (id, updates) => {
-        // Se viene aggiornata l'immagine, salvala in IndexedDB
-        if (updates.base64) {
+        // Se viene aggiornata l'immagine, salvala in IndexedDB (senza perdere le pagine)
+        if (updates.base64 || updates.pages) {
+          const current = get().scores.find(score => score.id === id)
           try {
-            await saveAllScoreImages([{ id, base64: updates.base64 }])
+            await saveAllScoreImages([{ ...current, ...updates, id }])
           } catch (error) {
             console.error('Error saving image to IndexedDB:', error)
           }
@@ -113,6 +114,8 @@ const useStore = create(
           name: score.name,
           bpm: score.bpm,
           zoom: score.zoom || 100,
+          ...(score.kind ? { kind: score.kind } : {}),
+          ...(score.precount ? { precount: score.precount } : {}),
           // NON salvare base64, url, file nel LocalStorage
         })),
         selectedFolder: state.selectedFolder,

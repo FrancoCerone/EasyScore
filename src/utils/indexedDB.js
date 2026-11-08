@@ -80,7 +80,12 @@ export const saveAllScoreImages = async (scores) => {
     
     const promises = scores
       .filter(score => score.base64)
-      .map(score => store.put({ id: score.id, base64: score.base64 }))
+      .map(score => store.put({
+        id: score.id,
+        base64: score.base64,
+        // Spartiti EasyScore: pagine e righi
+        ...(score.pages ? { pages: score.pages } : {})
+      }))
     
     await Promise.all(promises)
   } catch (error) {
@@ -101,7 +106,12 @@ export const loadAllScoreImages = async (scores) => {
         request.onsuccess = () => {
           const result = request.result
           if (result && result.base64) {
-            resolve({ ...score, base64: result.base64, url: result.base64 })
+            resolve({
+              ...score,
+              base64: result.base64,
+              url: result.base64,
+              ...(result.pages ? { pages: result.pages } : {})
+            })
           } else {
             resolve(score)
           }

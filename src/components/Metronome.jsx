@@ -2,11 +2,14 @@ import React, { useState, useEffect, useRef } from 'react'
 import MetronomeClass from '../utils/metronome'
 import './Metronome.css'
 
-const Metronome = ({ bpm, isPlaying, onBPMChange, onPlayPause }) => {
+const Metronome = ({ bpm, isPlaying, onBPMChange, onPlayPause, onBeat }) => {
   const [currentBPM, setCurrentBPM] = useState(bpm)
   const [tick, setTick] = useState(0)
   const [soundType, setSoundType] = useState('classic')
   const metronomeRef = useRef(null)
+  // Callback sempre aggiornata, chiamata a ogni click del metronomo
+  const onBeatRef = useRef(onBeat)
+  onBeatRef.current = onBeat
 
   useEffect(() => {
     if (!metronomeRef.current) {
@@ -27,6 +30,7 @@ const Metronome = ({ bpm, isPlaying, onBPMChange, onPlayPause }) => {
       if (isPlaying) {
         metronomeRef.current.start(currentBPM, () => {
           setTick(prev => prev + 1)
+          if (onBeatRef.current) onBeatRef.current()
         })
       } else {
         metronomeRef.current.stop()
