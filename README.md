@@ -30,3 +30,12 @@ npm run dev
 npm run build
 ```
 
+
+## Pubblicazione su GitHub Pages
+
+Il deploy è automatico tramite GitHub Actions (`.github/workflows/deploy.yml`) a ogni push su `main`.
+
+Configurazione una tantum: su GitHub vai in **Settings → Pages → Build and deployment → Source** e scegli **GitHub Actions**.
+
+L'app sarà disponibile su `https://francocerone.github.io/EasyScore/`.
+Se rinomini il repository, aggiorna `base` in `vite.config.js`.
