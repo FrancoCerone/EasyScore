@@ -1,6 +1,6 @@
 .folder-selector {
   padding: 2rem 1rem;
-  max-width: 600px;
+  max-width: 920px;
   margin: 0 auto;
   text-align: center;
 }
@@ -21,6 +21,13 @@
 .folder-input-wrapper {
   position: relative;
   margin: 2rem 0;
+}
+
+.folder-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
 }
 
 .folder-input {
@@ -85,8 +92,18 @@
 }
 
 
+button.folder-label {
+  font-family: inherit;
+  border: 2px solid var(--primary-color);
+}
+
+button.folder-label:disabled {
+  opacity: 0.6;
+  cursor: progress;
+  transform: none;
+}
+
 .folder-label-secondary {
-  margin-left: 0.75rem;
   background-color: transparent;
   color: var(--primary-color);
   border: 2px solid var(--primary-color);
@@ -103,9 +120,3 @@
   color: var(--text-secondary);
 }
 
-@media (max-width: 480px) {
-  .folder-label-secondary {
-    margin-left: 0;
-    margin-top: 0.75rem;
-  }
-}

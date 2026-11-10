@@ -233,7 +233,7 @@ const ScoreList = () => {
     return (
       <div className="score-list-empty">
         <p>Nessuno spartito caricato</p>
-        <p className="hint">Seleziona una cartella per iniziare</p>
+        <p className="hint">Seleziona una cartella o Drive per iniziare</p>
       </div>
     )
   }
