@@ -1,7 +1,6 @@
 const SCOPE = 'https://www.googleapis.com/auth/drive.readonly'
 const FOLDER_MIME = 'application/vnd.google-apps.folder'
 const GSI_SRC = 'https://accounts.google.com/gsi/client'
-const GAPI_SRC = 'https://apis.google.com/js/api.js'
 const SCORE_NAME = /\.(jpe?g|png|webp|json)$/i
 const SCORE_MIME = new Set([
   'image/jpeg',
@@ -80,15 +79,7 @@ let scriptsReady = null
 export const preloadGoogleDrive = () => {
   if (!isGoogleDriveConfigured()) return Promise.resolve()
   if (!scriptsReady) {
-    scriptsReady = Promise.all([
-      loadScript(GSI_SRC, () => Boolean(window.google?.accounts?.oauth2)),
-      loadScript(GAPI_SRC, () => Boolean(window.gapi?.load))
-    ]).then(() => new Promise((resolve, reject) => {
-      window.gapi.load('picker', {
-        callback: resolve,
-        onerror: () => reject(new Error('Impossibile aprire il selettore di Google Drive.'))
-      })
-    })).catch((error) => {
+    scriptsReady = loadScript(GSI_SRC, () => Boolean(window.google?.accounts?.oauth2)).catch((error) => {
       scriptsReady = null
       throw error
     })
@@ -172,6 +163,20 @@ const listChildren = async (folderId, token) => {
   return files
 }
 
+export const listDriveFolder = async (folderId, token) => {
+  const files = await listChildren(folderId, token)
+  return files
+    .filter((file) => file.mimeType === FOLDER_MIME || isScoreFile(file))
+    .sort((a, b) => {
+      const aFolder = a.mimeType === FOLDER_MIME ? 0 : 1
+      const bFolder = b.mimeType === FOLDER_MIME ? 0 : 1
+      if (aFolder !== bFolder) return aFolder - bFolder
+      return (a.name || '').localeCompare(b.name || '', 'it')
+    })
+}
+
+export const isDriveFolder = (file) => file?.mimeType === FOLDER_MIME
+
 const isScoreFile = (file) => {
   if (SCORE_MIME.has(file.mimeType)) return true
   return SCORE_NAME.test(file.name || '')
@@ -243,54 +248,11 @@ const collectDocs = async (docs, token) => {
   return { files, rejected }
 }
 
-const openPicker = (token) => new Promise((resolve) => {
-  const { apiKey, appId } = googleDriveConfig()
-  const google = window.google
-
-  const scoresView = new google.picker.DocsView(google.picker.ViewId.DOCS)
-    .setIncludeFolders(true)
-    .setSelectFolderEnabled(false)
-    .setMimeTypes('image/jpeg,image/png,image/webp,application/json,application/vnd.google-apps.folder')
-    .setLabel('Spartiti')
-
-  const folderView = new google.picker.DocsView(google.picker.ViewId.FOLDERS)
-    .setIncludeFolders(true)
-    .setSelectFolderEnabled(true)
-    .setLabel('Cartella')
-
-  const picker = new google.picker.PickerBuilder()
-    .enableFeature(google.picker.Feature.MULTISELECT_ENABLED)
-    .enableFeature(google.picker.Feature.SUPPORT_DRIVES)
-    .setAppId(appId)
-    .setDeveloperKey(apiKey)
-    .setOAuthToken(token)
-    .setOrigin(window.location.origin)
-    .setLocale('it')
-    .setTitle('Scegli spartiti o una cartella')
-    .addView(scoresView)
-    .addView(folderView)
-    .setCallback((data) => {
-      const action = data[google.picker.Response.ACTION]
-      if (action === google.picker.Action.PICKED) {
-        resolve(data[google.picker.Response.DOCUMENTS] || [])
-      } else if (action === google.picker.Action.CANCEL) {
-        resolve(null)
-      }
-    })
-    .build()
-
-  picker.setVisible(true)
-})
-
 /**
- * Apre il selettore di Drive e scarica i file scelti.
+ * Scarica i file scelti nel browser di Drive.
  * Una cartella porta dentro le immagini e i .json che contiene, senza le sottocartelle.
- * Restituisce null se l'utente chiude il selettore.
  */
-export const loadScoreFilesFromDrive = async (token) => {
-  const docs = await openPicker(token)
-  if (!docs) return null
-
+export const downloadDriveDocs = async (docs, token) => {
   const { files: docsToDownload, rejected } = await collectDocs(docs, token)
   const downloaded = await mapPool(docsToDownload, 4, async (doc) => {
     try {

@@ -3,11 +3,12 @@ import useStore from '../store/useStore'
 import { loadScoresFromFiles } from '../utils/fileUtils'
 import {
   DRIVE_SETUP_MESSAGE,
+  downloadDriveDocs,
   isGoogleDriveConfigured,
-  loadScoreFilesFromDrive,
   preloadGoogleDrive,
   requestDriveAccess
 } from '../utils/googleDrive'
+import DriveBrowser from './DriveBrowser'
 import './FolderSelector.css'
 
 const ACCEPTED_FILES = 'image/jpeg,image/jpg,image/png,image/webp,.json,application/json'
@@ -23,6 +24,7 @@ const FolderSelector = () => {
   const filesInputRef = useRef(null)
   const [driveBusy, setDriveBusy] = useState(false)
   const [driveReady, setDriveReady] = useState(!isGoogleDriveConfigured())
+  const [driveToken, setDriveToken] = useState(null)
 
   useEffect(() => {
     if (!isGoogleDriveConfigured()) return undefined
@@ -104,12 +106,22 @@ const FolderSelector = () => {
 
     setDriveBusy(true)
     requestDriveAccess()
-      .then(async (token) => {
-        if (!token) return null
-        return loadScoreFilesFromDrive(token)
+      .then((token) => {
+        if (token) setDriveToken(token)
       })
+      .catch((error) => {
+        console.error('Error loading Google Drive:', error)
+        alert(error.message || 'Errore nel caricamento da Google Drive.')
+      })
+      .finally(() => setDriveBusy(false))
+  }
+
+  const handleDriveConfirm = (docs) => {
+    const token = driveToken
+    setDriveToken(null)
+    setDriveBusy(true)
+    downloadDriveDocs(docs, token)
       .then(async (loaded) => {
-        if (!loaded) return
         reportRejected(loaded.rejected)
         const { scores: newScores, rejected } = await loadScoresFromFiles(loaded.files)
         reportRejected(rejected)
@@ -186,6 +198,14 @@ const FolderSelector = () => {
           </div>
           <p className="folder-hint">Immagini (JPG, PNG, WebP) o spartiti EasyScore (.json), dal computer o da Google Drive</p>
         </div>
+
+        {driveToken && (
+          <DriveBrowser
+            token={driveToken}
+            onCancel={() => setDriveToken(null)}
+            onConfirm={handleDriveConfirm}
+          />
+        )}
 
         {scores.length > 0 && (
           <div className="folder-info">

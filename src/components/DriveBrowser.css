@@ -1,0 +1,150 @@
+.drive-browser {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgb(15 23 42 / 0.45);
+}
+
+.drive-browser-panel {
+  width: min(640px, 100%);
+  max-height: min(720px, 100%);
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  color: var(--text-primary);
+  border-radius: 0.75rem;
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+
+.drive-browser-header,
+.drive-browser-footer {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.9rem 1rem;
+}
+
+.drive-browser-header {
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+
+.drive-browser-header h2 {
+  font-size: 1.15rem;
+}
+
+.drive-browser-close {
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.drive-browser-path {
+  padding: 0.7rem 1rem 0;
+  font-size: 0.9rem;
+  text-align: left;
+}
+
+.drive-browser-crumb button {
+  border: none;
+  background: transparent;
+  color: var(--primary-color);
+  font: inherit;
+  cursor: pointer;
+}
+
+.drive-browser-crumb button:disabled {
+  color: var(--text-primary);
+  cursor: default;
+}
+
+.drive-browser-sep {
+  margin: 0 0.35rem;
+  color: var(--text-secondary);
+}
+
+.drive-browser-list {
+  flex: 1;
+  overflow: auto;
+  margin: 0.6rem 0;
+  text-align: left;
+}
+
+.drive-browser-status {
+  padding: 1rem;
+  color: var(--text-secondary);
+}
+
+.drive-browser-error {
+  color: var(--danger);
+}
+
+.drive-browser-row + .drive-browser-row {
+  border-top: 1px solid var(--border);
+}
+
+.drive-browser-open,
+.drive-browser-file {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.75rem 1rem;
+  text-align: left;
+}
+
+.drive-browser-open {
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.drive-browser-open:hover,
+.drive-browser-file:hover {
+  background: var(--background);
+}
+
+.drive-browser-file {
+  cursor: pointer;
+}
+
+.drive-browser-footer {
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--border);
+}
+
+.drive-browser-btn {
+  border: 2px solid var(--primary-color);
+  background: transparent;
+  color: var(--primary-color);
+  border-radius: 0.6rem;
+  padding: 0.55rem 0.9rem;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.drive-browser-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.drive-browser-btn-primary {
+  background: var(--primary-color);
+  color: white;
+}
+
+.drive-browser-btn-primary:hover:not(:disabled) {
+  background: var(--primary-hover);
+}
