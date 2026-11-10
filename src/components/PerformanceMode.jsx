@@ -399,6 +399,20 @@ const PerformanceMode = () => {
                   className="tab-page-image"
                   draggable={false}
                 />
+                {(page.notes || []).map((note, noteIndex) => (
+                  <div
+                    key={`note-${noteIndex}`}
+                    className="tab-note"
+                    style={{
+                      left: `${note.x * 100}%`,
+                      top: `${note.y * 100}%`,
+                      width: `${note.w * 100}%`,
+                      height: `${note.h * 100}%`
+                    }}
+                  >
+                    {note.text}
+                  </div>
+                ))}
                 {page.lines.map((line, lineIndex) => (
                   <div
                     key={lineIndex}

@@ -5,6 +5,9 @@ export const TAB_SALA_KIND = 'tab-sala'
 
 const MIN_LINE_W = 0.02
 const MIN_LINE_H = 0.015
+const MIN_NOTE_W = 0.02
+const MIN_NOTE_H = 0.015
+const MAX_NOTE_TEXT = 400
 const DEFAULT_BEATS = 8
 const MAX_BEATS = 128
 const DEFAULT_BPM = 120
@@ -54,6 +57,31 @@ const normalizeLine = (raw) => {
   }
 }
 
+const normalizeNote = (raw) => {
+  if (!raw || typeof raw !== 'object') return null
+
+  const x = toNumber(raw.x)
+  const y = toNumber(raw.y)
+  let w = toNumber(raw.w)
+  let h = toNumber(raw.h)
+  if (x === null || y === null || w === null || h === null) return null
+
+  w = Math.min(w, 1)
+  h = Math.min(h, 1)
+  if (w < MIN_NOTE_W || h < MIN_NOTE_H) return null
+
+  const text = typeof raw.text === 'string' ? raw.text.slice(0, MAX_NOTE_TEXT) : ''
+  if (!text.trim()) return null
+
+  return {
+    x: clamp(x, 0, 1 - w),
+    y: clamp(y, 0, 1 - h),
+    w,
+    h,
+    text
+  }
+}
+
 const decodePageImage = (page, pageNumber) => {
   if (typeof page.image !== 'string') {
     throw new Error(`pagina ${pageNumber}: immagine mancante`)
@@ -94,7 +122,9 @@ export const parseTabSala = (data) => {
       name: typeof page.name === 'string' ? page.name : `Pagina ${pageNumber}`,
       url: decodePageImage(page, pageNumber),
       // L'ordine dei righi è quello di lettura: non va cambiato
-      lines: page.lines.map(normalizeLine).filter(Boolean)
+      lines: page.lines.map(normalizeLine).filter(Boolean),
+      // Gli appunti sono facoltativi e non entrano nella numerazione dei beat
+      notes: Array.isArray(page.notes) ? page.notes.map(normalizeNote).filter(Boolean) : []
     }
   })
 }

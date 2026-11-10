@@ -2,7 +2,7 @@
 
 File esportato da EasyScore Configurator (pulsante **Esporta**). Estensione tipica: `nome.easyscore.json`.
 
-EasyScore lo usa per disegnare lo spartito e per evidenziare il beat corrente. Il file contiene le pagine, i righi, quanti beat evidenziare insieme e, facoltativi, il BPM e il conteggio iniziale. Non contiene video.
+EasyScore lo usa per disegnare lo spartito, per evidenziare il beat corrente e per mostrare gli appunti di testo. Il file contiene le pagine, i righi, quanti beat evidenziare insieme, i riquadri di testo e, facoltativi, il BPM e il conteggio iniziale. Non contiene video.
 
 ## Come riconoscerlo
 
@@ -29,6 +29,9 @@ Il documento è JSON UTF-8. Va accettato solo se:
       "image": "<Base64 dell'immagine, senza prefisso data:>",
       "lines": [
         { "x": 0.04, "y": 0.11, "w": 0.92, "h": 0.07, "beats": 8, "highlight": 4 }
+      ],
+      "notes": [
+        { "x": 0.06, "y": 0.02, "w": 0.22, "h": 0.05, "text": "Intro chitarra" }
       ]
     }
   ]
@@ -48,10 +51,14 @@ Il documento è JSON UTF-8. Va accettato solo se:
 | `w`, `h` | Larghezza e altezza del rigo, nelle stesse frazioni. |
 | `beats` | Quanti beat stanno in quel rigo, da 1 a 128. Se manca o non è un numero, vale 8. |
 | `highlight` | Quanti beat tenere evidenziati insieme, da 1 a `beats`. Se manca, vale `beats` (tutto il rigo). |
+| `notes` | Facoltativo. Riquadri di testo sulla pagina. Se manca, la pagina non ha appunti. Non contano come beat e non vanno riordinati rispetto ai righi. |
+| `text` | Testo dell’appunto, al massimo 400 caratteri. Un appunto vuoto o senza testo si scarta. |
 
 `x`, `y`, `w` e `h` sono relativi all’immagine intera, non ai pixel. Per disegnare: `pixelX = x * larghezzaImmagine`, e lo stesso per `y`, `w` e `h`.
 
 Un rigo più stretto di `0.02` o più basso di `0.015` va scartato. Il rettangolo va tenuto dentro la pagina: se sborda, tagliare `x`/`y` in modo che `x + w` e `y + h` non superino `1`.
+
+Un appunto usa le stesse frazioni `x`, `y`, `w`, `h`. Vale lo stesso scarto sotto `0.02` × `0.015` e lo stesso taglio dentro la pagina. Si disegna sopra l’immagine, con il testo dentro il rettangolo, e non intercetta i click: se copre un rigo, il tocco arriva comunque al rigo. L’evidenziazione del beat resta sopra l’appunto.
 
 ## Numerazione dei beat
 

@@ -338,6 +338,7 @@
 .tab-page {
   position: relative;
   line-height: 0;
+  container-type: inline-size;
 }
 
 .tab-page + .tab-page {
@@ -359,9 +360,28 @@
   border-radius: 2px;
 }
 
+.tab-note {
+  position: absolute;
+  z-index: 2;
+  box-sizing: border-box;
+  overflow: hidden;
+  pointer-events: none;
+  border: 2px solid #1c1c20;
+  border-radius: 4px;
+  background: rgba(255, 250, 220, 0.94);
+  color: #16160a;
+  padding: 0.12em 0.35em;
+  font-size: clamp(13px, 1.7cqi, 26px);
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 .tab-band,
 .tab-cursor {
   position: absolute;
+  z-index: 4;
   pointer-events: none;
 }
 

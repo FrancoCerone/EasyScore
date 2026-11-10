@@ -297,6 +297,8 @@ const ScoreList = () => {
                             {score.pages && (
                               <span className="score-kind">
                                 {' '}· EasyScore · {score.pages.length} pag. · {score.pages.reduce((n, p) => n + p.lines.length, 0)} righi
+                                {score.pages.reduce((n, p) => n + (p.notes?.length || 0), 0) > 0 &&
+                                  ` · ${score.pages.reduce((n, p) => n + (p.notes?.length || 0), 0)} appunti`}
                                 {score.precount > 0 && ` · precount ${score.precount}`}
                               </span>
                             )}
